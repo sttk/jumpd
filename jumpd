@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+
+# jumpd -- Jump to specified or previous directory
+#
+# Usage:
+#   . jumpd [ dirpath ]
+
+# (C) 2017 Takayuki Sato.
+# MIT License
+# https://github.com/sttk/jumpd
+
+savepath="${HOME}/.jumpd"
+
+E_NO_SAVE_PATH=1
+E_NO_SAVED_DIR=2
+E_INVALID_DIR=3
+
+if [ -z "${1}" ]; then
+  if [ ! -f "${savepath}" ]; then
+    echo "Not found: ${savepath}"
+    return ${E_NO_SAVE_PATH}
+  fi
+
+  dirpath=$(head -n 1 ${savepath})
+  if [ -z "${dirpath}" ]; then
+    echo "No path in ${savepath}"
+    return ${E_NO_SAVED_DIR}
+  fi
+elif [ "${1}" == "." ]; then
+  dirpath=$(pwd)
+else
+  dirpath=${1}
+fi
+
+protocol=$(echo ${dirpath} | cut -c1-8)
+if [ "${protocol}" = "file:///" ]; then
+  dirpath=$(echo ${dirpath} | cut -c8-)
+fi
+
+if [ -L ${dirpath} ]; then
+  cd $(dirname ${dirpath})
+  dirpath=$(basename ${dirpath})
+  dirpath=$(readlink ${dirpath})
+
+  if [ -d ${dirpath} ]; then
+    cd ${dirpath}
+    pwd > ${savepath}
+    return 0
+  fi
+
+  if [ -f ${dirpath} ]; then
+    dirpath=$(dirname ${dirpath})
+    cd ${dirpath}
+    pwd > ${savepath}
+    return 0
+  fi
+fi
+
+if [ -d ${dirpath} ]; then
+  cd ${dirpath}
+  pwd > ${savepath}
+  return 0
+fi
+
+if [ -f ${dirpath} ]; then
+  dirpath=$(dirname ${dirpath})
+  cd ${dirpath}
+  pwd > ${savepath}
+  return 0
+fi
+
+echo "Invalid path: ${dirpath}"
+return ${E_INVALID_DIR}
+
