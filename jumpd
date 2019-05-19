@@ -14,6 +14,7 @@ savepath="${HOME}/.jumpd"
 E_NO_SAVE_PATH=1
 E_NO_SAVED_DIR=2
 E_INVALID_DIR=3
+E_MKDIR_FAILED=4
 
 if [ -z "${1}" ]; then
   if [ ! -f "${savepath}" ]; then
@@ -69,6 +70,21 @@ if [ -f ${dirpath} ]; then
   return 0
 fi
 
-echo "Invalid path: ${dirpath}"
-return ${E_INVALID_DIR}
+echo -n "'${dirpath}' does not exist. Do you make this directory? (Y/n) "
+read yesno
+case "${yesno}" in
+[Yy] | "")
+  mkdir -p ${dirpath}
+  if [ $? != 0 ]; then
+    return ${E_MKDIR_FAIL}
+  fi
+  cd ${dirpath}
+  pwd > ${savepath}
+  return 0
+  ;;
+*)
+  echo "Invalid path: ${dirpath}"
+  return ${E_INVALID_DIR}
+  ;;
+esac
 

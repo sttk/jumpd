@@ -59,6 +59,8 @@ Jumps to specified or previous directory.
     /path/to/dest/dir
     ```
 
+5. This tool make 
+
 ## License
 
 Copyright (C) 2017 Takayuki Sato
