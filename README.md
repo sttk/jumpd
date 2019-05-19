@@ -76,6 +76,6 @@ This program is free software under [MIT][mit-url] License.
 See the file LICENSE in this distribution for more details.
 
 [repo-url]: https://github.com/sttk/jumpd/
-[ver-img]: https://img.shields.io/badge/ver-0.1.0-blue.svg
+[ver-img]: https://img.shields.io/badge/version-0.2.0-blue.svg
 [mit-img]: https://img.shields.io/badge/license-MIT-green.svg
 [mit-url]: https://opensource.org/licenses/MIT
