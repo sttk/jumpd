@@ -59,11 +59,18 @@ Jumps to specified or previous directory.
     /path/to/dest/dir
     ```
 
-5. This tool make 
+5. This tool makes the specified directory if it does not exist.
+
+    ```
+    $ jd not/exist/dir
+    'not/exist/dir' does not exist. Do you make this directory? (Y/n) y
+    $ pwd
+    /path/to/not/exist/dir
+    ```
 
 ## License
 
-Copyright (C) 2017 Takayuki Sato
+Copyright (C) 2017-2019 Takayuki Sato
 
 This program is free software under [MIT][mit-url] License.
 See the file LICENSE in this distribution for more details.
