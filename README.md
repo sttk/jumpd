@@ -22,6 +22,7 @@ Jumps to specified or previous directory.
    /path/to/dest/dir
    $ cat ~/.jumpd
    /path/to/dest/dir
+   dir /path/to/dest/dir
    ``` 
 
 2. This tool jumps back to the saved path when specifying no argument.
@@ -31,6 +32,7 @@ Jumps to specified or previous directory.
     $ jd
     $ pwd
     /path/to/dest/dir
+    dir /path/to/dest/dir
     ```
 
 3. If the specified path is not a directory but a file, this tool jumps to the parent directory.
@@ -42,7 +44,7 @@ Jumps to specified or previous directory.
     ```
 
 
-3. This tool supports URL path like `file:///path/to/dest/dir/page.html`.
+4. This tool supports URL path like `file:///path/to/dest/dir/page.html`.
 
     ```sh
     $ jd file:///path/to/dest/dir/page.html
@@ -50,7 +52,7 @@ Jumps to specified or previous directory.
     /path/to/dest/dir
     ```
 
-4. This tool jumps to the real path even if the specified path is a symbolic link.
+5. This tool jumps to the real path even if the specified path is a symbolic link.
 
     ```
     $ ln -s /path/to/dest/dir symdir
@@ -59,7 +61,7 @@ Jumps to specified or previous directory.
     /path/to/dest/dir
     ```
 
-5. This tool makes the specified directory if it does not exist.
+6. This tool makes the specified directory if it does not exist.
 
     ```
     $ jd not/exist/dir
@@ -67,6 +69,42 @@ Jumps to specified or previous directory.
     $ pwd
     /path/to/not/exist/dir
     ```
+
+7. This tool is able to move directory path with basename if saved.
+
+    ```
+    $cat ~/.jumpd
+    /path/to/dest/dir
+    dir /path/to/dest/dir
+    $ jd -to dir
+    $ pwd
+    /path/to/dest/dir
+    ```
+
+8. This tool is able to save and move directory path with key.
+
+    ```
+    $ jd dir/with/key mykey
+    $ pwd
+    /path/to/dir/with/key
+    $ cat ~/.jumpd
+    /path/to/dir/with/key
+    dir /path/to/dest/dir
+    mykey /path/to/dir/with/key
+    $
+    $ cd ../..
+    $ pwd
+    /path/to/dir
+    $
+    $ jd -to mykey
+    $ pwd
+    /path/to/dir/with/key
+    $ cat ~/.jumpd
+    /path/to/dir/with/key
+    mykey /path/to/dir/with/key
+    dir /path/to/dest/dir
+    ```
+
 
 ## License
 

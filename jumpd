@@ -3,88 +3,167 @@
 # jumpd -- Jump to specified or previous directory
 #
 # Usage:
-#   . jumpd [ dirpath ]
+#   . jumpd dirpath [ dirkey ]
+#   . jumpd [ -to=dirkey | -to dirkey ]
 
-# (C) 2017 Takayuki Sato.
+# (C) 2017-2019 Takayuki Sato
 # MIT License
 # https://github.com/sttk/jumpd
 
-savepath="${HOME}/.jumpd"
+function usage() {
+  echo "Usage:"
+  echo "  . jumpd dirpath [ dirkey ]"
+  echo "  . jumpd [ -to=dirkey | -to dirkey ]"
+}
 
-E_NO_SAVE_PATH=1
-E_NO_SAVED_DIR=2
-E_INVALID_DIR=3
-E_MKDIR_FAILED=4
+function first_char() {
+  echo ${1} | cut -c1
+}
 
-if [ -z "${1}" ]; then
-  if [ ! -f "${savepath}" ]; then
-    echo "Not found: ${savepath}"
-    return ${E_NO_SAVE_PATH}
+function find_destdir() {
+  local savepath="${1}"
+  local dirkey="${2}"
+
+  if [[ -z "${dirkey}" ]]; then
+    head -n 1 "${savepath}"
+  else
+    grep -m 1 "^${dirkey} " "${savepath}" | sed "s/^${dirkey} //"
+  fi
+}
+
+function resolve_urlform() {
+  local dirpath="${1}"
+  local protocol="$(echo "${dirpath}" | cut -c1-8)"
+  if [ "${protocol}" = "file:///" ]; then
+    dirpath="$(echo "${dirpath}" | cut -c8-)"
+  fi
+  echo "${dirpath}"
+
+}
+
+function resolve_symlink() {
+  local dirpath="${1}"
+  if [[ -L "${dirpath}" ]]; then
+    cd "$(dirname "${dirpath}")"
+    dirpath="$(basename "${dirpath}")"
+    dirpath="$(readlink "${dirpath}")"
+  fi
+  echo "${dirpath}"
+}
+
+function resolve_dir() {
+  local dirpath="${1}"
+  if [[ -f "${dirpath}" ]]; then
+    dirpath="$(dirname "${dirpath}")"
+  fi
+  echo "${dirpath}"
+}
+
+function save() {
+  local destdir="${1}"
+  local dirkey="${2}"
+  local savepath="${3}"
+
+  echo "${destdir}" > "${savepath}".tmp
+  if [[ ! -z "${dirkey}" ]]; then
+    echo "${dirkey} ${destdir}" >> "${savepath}".tmp
+  fi
+  tail -n +2 "${savepath}" | sed "/^${dirkey} /d" >> "${savepath}".tmp
+  mv "${savepath}".tmp "${savepath}"
+}
+
+function main() {
+  local E_INVALID_OPTION=1
+  local E_NO_DIR_KEY=2
+  local E_INVALID_DIR=3
+  local E_MKDIR_FAIL=4
+  local E_NO_SUCH_DIR_KEY=5
+
+  local savepath="${HOME}/.jumpd"
+  if [[ ! -f "${savepath}" ]]; then
+    touch "${savepath}"
   fi
 
-  dirpath=$(head -n 1 ${savepath})
-  if [ -z "${dirpath}" ]; then
-    echo "No path in ${savepath}"
-    return ${E_NO_SAVED_DIR}
+  local dirkey=
+  local dirpath=
+  if [[ "${1}" == "" ]]; then
+    :
+  elif [[ "${2}" == "" ]]; then
+    if [[ "$(first_char "${1}")" == "-" ]]; then
+      if [[ "${1}" == "-h" ]]; then
+        usage
+        return 0
+      elif [[ "$(echo "${1}" | cut -d"=" -f1)" == "-to" ]]; then
+        dirkey="$(echo "${1}" | cut -d= -f2)"
+      else
+        echo "Invalid option: ${1}"
+        usage
+        return E_INVALID_OPTION
+      fi
+    else
+      dirpath="${1}"
+    fi
+  else
+    if [[ "$(first_char "${1}")" == "-" ]]; then
+      if [[ "${1}" == "-to" ]]; then
+        if [[ "$(first_char "${2}")" != "-" ]]; then
+          dirkey="${2}"
+        else
+          echo "No dirkey."
+          usage
+          return ${E_NO_DIR_KEY}
+        fi
+      else
+        echo "Invalid option: ${1}"
+        usage
+        return ${E_INVALID_OPTION}
+      fi
+    else
+      dirpath="${1}"
+      if [[ "$(first_char "${2}")" != "-" ]]; then
+        dirkey="${2}"
+      fi
+    fi
   fi
-elif [ "${1}" == "." ]; then
-  dirpath=$(pwd)
-else
-  dirpath=${1}
-fi
 
-protocol=$(echo ${dirpath} | cut -c1-8)
-if [ "${protocol}" = "file:///" ]; then
-  dirpath=$(echo ${dirpath} | cut -c8-)
-fi
-
-if [ -L ${dirpath} ]; then
-  cd $(dirname ${dirpath})
-  dirpath=$(basename ${dirpath})
-  dirpath=$(readlink ${dirpath})
-
-  if [ -d ${dirpath} ]; then
-    cd ${dirpath}
-    pwd > ${savepath}
-    return 0
+  if [[ -z "${dirpath}" ]]; then
+    local destdir="$(find_destdir "${savepath}" "${dirkey}")"
+    if [[ -z "${destdir}" ]]; then
+      if [[ ! -z "${dirkey}" ]]; then
+        echo "No such dirkey: ${dirkey}"
+        return ${E_NO_SUCH_DIR_KEY}
+      fi
+      return 0
+    fi
+    cd "${destdir}"
+    save "$(pwd)" "${dirkey}" "${savepath}"
+  else
+    dirpath="$(resolve_urlform "${dirpath}")"
+    dirpath="$(resolve_symlink "${dirpath}")"
+    dirpath="$(resolve_dir "${dirpath}")"
+    if [[ ! -d "${dirpath}" ]]; then
+      echo -n "'${dirpath}' does not exist. Do you make this directory? (Y/n) "
+      read yesno
+      case "${yesno}" in
+      [Yy] | "")
+        mkdir -p "${dirpath}"
+        if [ $? -ne 0 ]; then
+          return ${E_MKDIR_FAIL}
+        fi
+        ;;
+      *)
+        echo "Invalid path: ${dirpath}"
+        return ${E_INVALID_DIR}
+        ;;
+      esac
+    fi
+    cd "${dirpath}"
+    if [[ -z "${dirkey}" ]]; then
+      dirkey="$(basename $(pwd))"
+    fi
+    save "$(pwd)" "${dirkey}" "${savepath}"
   fi
-
-  if [ -f ${dirpath} ]; then
-    dirpath=$(dirname ${dirpath})
-    cd ${dirpath}
-    pwd > ${savepath}
-    return 0
-  fi
-fi
-
-if [ -d ${dirpath} ]; then
-  cd ${dirpath}
-  pwd > ${savepath}
   return 0
-fi
+}
 
-if [ -f ${dirpath} ]; then
-  dirpath=$(dirname ${dirpath})
-  cd ${dirpath}
-  pwd > ${savepath}
-  return 0
-fi
-
-echo -n "'${dirpath}' does not exist. Do you make this directory? (Y/n) "
-read yesno
-case "${yesno}" in
-[Yy] | "")
-  mkdir -p ${dirpath}
-  if [ $? != 0 ]; then
-    return ${E_MKDIR_FAIL}
-  fi
-  cd ${dirpath}
-  pwd > ${savepath}
-  return 0
-  ;;
-*)
-  echo "Invalid path: ${dirpath}"
-  return ${E_INVALID_DIR}
-  ;;
-esac
-
+main "$1" "$2"
