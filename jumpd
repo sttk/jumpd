@@ -1,33 +1,48 @@
 #!/usr/bin/env bash
 
-# jumpd -- Jump to specified or previous directory
-#
-# Usage:
-#   . jumpd dirpath [ dirkey ]
-#   . jumpd [ -to=dirkey | -to dirkey ]
-
 # (C) 2017-2019 Takayuki Sato
 # MIT License
 # https://github.com/sttk/jumpd
 
 function usage() {
-  echo "Usage:"
-  echo "  . jumpd dirpath [ dirkey ]"
-  echo "  . jumpd [ -to=dirkey | -to dirkey ]"
+cat <<EOF
+
+jumpd -- Jump to specified or previous directory
+
+Usage:
+  . jumpd dirpath
+      Jumps to dirpath and saves it as the last directory. If dirpath does not
+      exist, makes dirpath directory.
+  . jumpd
+      Jumps to the last directory.
+  . jumpd dirpath label
+      Jumps to dirpath and saves it as the last directory and saves it with
+      label. If dirpath does not exist, makes dirpath directory.
+  . jumpd dirpath .
+      Jumps to dirpath and saves it as the last directory and saves it with its
+      basename as label. If dirpath does not exist, makes dirpath directory.
+  . jumpd { -t label | -t=label }
+      Jumps to the directory which is saved with label.
+
+EOF
 }
 
 function first_char() {
-  echo ${1} | cut -c1
+  echo "${1}" | cut -c 1
+}
+
+function slice_chars() {
+  echo "${1}" | cut -c ${2}-${3}
 }
 
 function find_destdir() {
   local savepath="${1}"
-  local dirkey="${2}"
+  local label="${2}"
 
-  if [[ -z "${dirkey}" ]]; then
+  if [[ -z "${label}" ]]; then
     head -n 1 "${savepath}"
   else
-    grep -m 1 "^${dirkey} " "${savepath}" | sed "s/^${dirkey} //"
+    grep -m 1 "^${label} " "${savepath}" | sed "s/^${label} //"
   fi
 }
 
@@ -38,7 +53,6 @@ function resolve_urlform() {
     dirpath="$(echo "${dirpath}" | cut -c8-)"
   fi
   echo "${dirpath}"
-
 }
 
 function resolve_symlink() {
@@ -60,31 +74,34 @@ function resolve_dir() {
 }
 
 function save() {
-  local destdir="${1}"
-  local dirkey="${2}"
-  local savepath="${3}"
+  local savepath="${1}"
+  local destdir="${2}"
+  local label="${3}"
+
+# echo "destdir=${destdir}"
+# echo "label=${label}"
 
   echo "${destdir}" > "${savepath}".tmp
-  if [[ ! -z "${dirkey}" ]]; then
-    echo "${dirkey} ${destdir}" >> "${savepath}".tmp
+  if [[ ! -z "${label}" ]]; then
+    echo "${label} ${destdir}" >> "${savepath}".tmp
   fi
-  tail -n +2 "${savepath}" | sed "/^${dirkey} /d" >> "${savepath}".tmp
+  tail -n +2 "${savepath}" | sed "/^${label} /d" >> "${savepath}".tmp
   mv "${savepath}".tmp "${savepath}"
 }
 
 function main() {
   local E_INVALID_OPTION=1
-  local E_NO_DIR_KEY=2
+  local E_NO_LABEL=2
   local E_INVALID_DIR=3
   local E_MKDIR_FAIL=4
-  local E_NO_SUCH_DIR_KEY=5
+  local E_NO_SUCH_LABEL=5
 
   local savepath="${HOME}/.jumpd"
   if [[ ! -f "${savepath}" ]]; then
     touch "${savepath}"
   fi
 
-  local dirkey=
+  local label=
   local dirpath=
   if [[ "${1}" == "" ]]; then
     :
@@ -93,8 +110,8 @@ function main() {
       if [[ "${1}" == "-h" ]]; then
         usage
         return 0
-      elif [[ "$(echo "${1}" | cut -d"=" -f1)" == "-to" ]]; then
-        dirkey="$(echo "${1}" | cut -d= -f2)"
+      elif [[ "$(slice_chars "${1}" 1 3)" == "-t=" ]]; then
+        label="$(slice_chars "${1}" 4)"
       else
         echo "Invalid option: ${1}"
         usage
@@ -105,13 +122,13 @@ function main() {
     fi
   else
     if [[ "$(first_char "${1}")" == "-" ]]; then
-      if [[ "${1}" == "-to" ]]; then
+      if [[ "${1}" == "-t" ]]; then
         if [[ "$(first_char "${2}")" != "-" ]]; then
-          dirkey="${2}"
+          label="${2}"
         else
-          echo "No dirkey."
+          echo "No label."
           usage
-          return ${E_NO_DIR_KEY}
+          return ${E_NO_LABEL}
         fi
       else
         echo "Invalid option: ${1}"
@@ -121,26 +138,34 @@ function main() {
     else
       dirpath="${1}"
       if [[ "$(first_char "${2}")" != "-" ]]; then
-        dirkey="${2}"
+        label="${2}"
       fi
     fi
   fi
 
   if [[ -z "${dirpath}" ]]; then
-    local destdir="$(find_destdir "${savepath}" "${dirkey}")"
+    if [[ "${label}" == "." || "${label}" == ".." ]]; then
+      return 0
+    fi
+
+    local destdir="$(find_destdir "${savepath}" "${label}")"
     if [[ -z "${destdir}" ]]; then
-      if [[ ! -z "${dirkey}" ]]; then
-        echo "No such dirkey: ${dirkey}"
-        return ${E_NO_SUCH_DIR_KEY}
+      if [[ ! -z "${label}" ]]; then
+        echo "** No such label: ${label}"
+        return ${E_NO_SUCH_LABEL}
       fi
       return 0
     fi
+
     cd "${destdir}"
-    save "$(pwd)" "${dirkey}" "${savepath}"
+    save "${savepath}" "$(pwd)"
+    return 0
+
   else
     dirpath="$(resolve_urlform "${dirpath}")"
     dirpath="$(resolve_symlink "${dirpath}")"
     dirpath="$(resolve_dir "${dirpath}")"
+
     if [[ ! -d "${dirpath}" ]]; then
       echo -n "'${dirpath}' does not exist. Do you make this directory? (Y/n) "
       read yesno
@@ -157,12 +182,14 @@ function main() {
         ;;
       esac
     fi
+
     cd "${dirpath}"
-    if [[ -z "${dirkey}" ]]; then
-      dirkey="$(basename $(pwd))"
+    if [[ "${label}" == "." ]]; then
+      label="$(basename $(pwd))"
     fi
-    save "$(pwd)" "${dirkey}" "${savepath}"
+    save "${savepath}" "$(pwd)" "${label}"
   fi
+
   return 0
 }
 
