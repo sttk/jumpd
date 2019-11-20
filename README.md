@@ -1,6 +1,7 @@
 # [jumpd][repo-url] ![Version][ver-img] [![MIT License][mit-img]][mit-url]
 
-Jumps to specified or previous directory.
+Jumps to the the last jumped directory or the labeled directory.
+If the destination direcotry does not exist, makes it.
 
 ## Install
 
@@ -12,6 +13,14 @@ Jumps to specified or previous directory.
     alias jd='. $HOME/tools/jumpd'
     ```
 
+## CLI
+
+```sh
+. jumpd dirpath [ label | . ]
+. jumpd [ -t label | -t=label ]
+. jumpd -h
+```
+
 ## Usage
 
 1. This tool jumps specified directory and save it in `~/.jumpd` file.
@@ -22,20 +31,50 @@ Jumps to specified or previous directory.
    /path/to/dest/dir
    $ cat ~/.jumpd
    /path/to/dest/dir
-   dir /path/to/dest/dir
    ``` 
 
-2. This tool jumps back to the saved path when specifying no argument.
+1. This tool jumps back to the last saved path with no argument.
 
     ```sh
-    $ cd another/dir
+    $ cd ../another/dir
     $ jd
     $ pwd
     /path/to/dest/dir
-    dir /path/to/dest/dir
+    $ cat ~/.jumpd
+    /path/to/dest/dir
     ```
 
-3. If the specified path is not a directory but a file, this tool jumps to the parent directory.
+1. This tool can save directory with label.
+
+    ```sh
+    $ jd ../another/dir another
+    $ pwd
+    /path/to/another/dir
+    $ cat ~/.jumpd
+    /path/to/another/dir
+    another /path/to/another/dir
+    $ jd ../dest/dir .  # '.' of 2nd argument indicates a basename of jumped dir.
+    $ pwd
+    /path/to/dest/dir
+    $ cat ~/.jumpd
+    /path/to/dest/dir
+    dir /path/to/dest/dir
+    another /path/to/another/dir
+    ```
+
+1. This tool jumps back to the saved path by label with `-t` option.    
+
+    ```sh
+    $ jd -t another
+    $ pwd
+    /path/to/another/dir
+    $ cat ~/.jumpd
+    /path/to/another/dir
+    another /path/to/another/dir
+    dest /path/to/dest/dir
+    ```    
+
+1. If the specified path is not a directory but a file, this tool jumps to the parent directory.
 
     ```sh
     $ jd dest/dir/file.txt
@@ -44,7 +83,7 @@ Jumps to specified or previous directory.
     ```
 
 
-4. This tool supports URL path like `file:///path/to/dest/dir/page.html`.
+1. This tool supports URL path like `file:///path/to/dest/dir/page.html`.
 
     ```sh
     $ jd file:///path/to/dest/dir/page.html
@@ -52,7 +91,7 @@ Jumps to specified or previous directory.
     /path/to/dest/dir
     ```
 
-5. This tool jumps to the real path even if the specified path is a symbolic link.
+1. This tool jumps to the real path even if the specified path is a symbolic link.
 
     ```
     $ ln -s /path/to/dest/dir symdir
@@ -61,48 +100,13 @@ Jumps to specified or previous directory.
     /path/to/dest/dir
     ```
 
-6. This tool makes the specified directory if it does not exist.
+1. This tool makes the specified directory if it does not exist.
 
     ```
     $ jd not/exist/dir
     'not/exist/dir' does not exist. Do you make this directory? (Y/n) y
     $ pwd
     /path/to/not/exist/dir
-    ```
-
-7. This tool is able to move directory path with basename if saved.
-
-    ```
-    $cat ~/.jumpd
-    /path/to/dest/dir
-    dir /path/to/dest/dir
-    $ jd -to dir
-    $ pwd
-    /path/to/dest/dir
-    ```
-
-8. This tool is able to save and move directory path with key.
-
-    ```
-    $ jd dir/with/key mykey
-    $ pwd
-    /path/to/dir/with/key
-    $ cat ~/.jumpd
-    /path/to/dir/with/key
-    dir /path/to/dest/dir
-    mykey /path/to/dir/with/key
-    $
-    $ cd ../..
-    $ pwd
-    /path/to/dir
-    $
-    $ jd -to mykey
-    $ pwd
-    /path/to/dir/with/key
-    $ cat ~/.jumpd
-    /path/to/dir/with/key
-    mykey /path/to/dir/with/key
-    dir /path/to/dest/dir
     ```
 
 
@@ -114,6 +118,6 @@ This program is free software under [MIT][mit-url] License.
 See the file LICENSE in this distribution for more details.
 
 [repo-url]: https://github.com/sttk/jumpd/
-[ver-img]: https://img.shields.io/badge/version-0.2.0-blue.svg
+[ver-img]: https://img.shields.io/badge/version-0.3.0-blue.svg
 [mit-img]: https://img.shields.io/badge/license-MIT-green.svg
 [mit-url]: https://opensource.org/licenses/MIT
