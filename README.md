@@ -112,7 +112,7 @@ If the destination direcotry does not exist, makes it.
 
 ## License
 
-Copyright (C) 2017-2019 Takayuki Sato
+Copyright (C) 2017-2020 Takayuki Sato
 
 This program is free software under [MIT][mit-url] License.
 See the file LICENSE in this distribution for more details.
