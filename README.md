@@ -7,7 +7,7 @@ If the destination direcotry does not exist, makes it.
 
 1. Download `jumpd` file from [github.com][repo-url] and put it in your favorite directory. (ex. `~/tools`)
 
-2. Write an alias   in `.bashrc`
+2. Write an alias in `.bashrc` or `.zshrc`.
 
     ```sh
     alias jd='. $HOME/tools/jumpd'
