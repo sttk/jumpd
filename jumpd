@@ -15,14 +15,14 @@ Usage:
       exist, makes dirpath directory.
   . jumpd
       Jumps to the last directory.
-  . jumpd dirpath label
+  . jumpd dirpath tag
       Jumps to dirpath and saves it as the last directory and saves it with
-      label. If dirpath does not exist, makes dirpath directory.
+      tag. If dirpath does not exist, makes dirpath directory.
   . jumpd dirpath .
       Jumps to dirpath and saves it as the last directory and saves it with its
-      basename as label. If dirpath does not exist, makes dirpath directory.
-  . jumpd { -t label | -t=label }
-      Jumps to the directory which is saved with label.
+      basename as tag. If dirpath does not exist, makes dirpath directory.
+  . jumpd { -t tag | -t=tag }
+      Jumps to the directory which is saved with tag.
 
 EOF
 }
@@ -37,12 +37,12 @@ function slice_chars() {
 
 function find_destdir() {
   local savepath="${1}"
-  local label="${2}"
+  local tag="${2}"
 
-  if [[ -z "${label}" ]]; then
+  if [[ -z "${tag}" ]]; then
     head -n 1 "${savepath}"
   else
-    grep -m 1 "^${label} " "${savepath}" | sed "s/^${label} //"
+    grep -m 1 "^${tag} " "${savepath}" | sed "s/^${tag} //"
   fi
 }
 
@@ -76,16 +76,16 @@ function resolve_dir() {
 function save() {
   local savepath="${1}"
   local destdir="${2}"
-  local label="${3}"
+  local tag="${3}"
 
 # echo "destdir=${destdir}"
-# echo "label=${label}"
+# echo "tag=${tag}"
 
   echo "${destdir}" > "${savepath}".tmp
-  if [[ ! -z "${label}" ]]; then
-    echo "${label} ${destdir}" >> "${savepath}".tmp
+  if [[ ! -z "${tag}" ]]; then
+    echo "${tag} ${destdir}" >> "${savepath}".tmp
   fi
-  tail -n +2 "${savepath}" | sed "/^${label} /d" >> "${savepath}".tmp
+  tail -n +2 "${savepath}" | sed "/^${tag} /d" >> "${savepath}".tmp
   mv "${savepath}".tmp "${savepath}"
 }
 
@@ -101,7 +101,7 @@ function main() {
     touch "${savepath}"
   fi
 
-  local label=
+  local tag=
   local dirpath=
   if [[ "${1}" == "" ]]; then
     :
@@ -111,7 +111,7 @@ function main() {
         usage
         return 0
       elif [[ "$(slice_chars "${1}" 1 3)" == "-t=" ]]; then
-        label="$(slice_chars "${1}" 4)"
+        tag="$(slice_chars "${1}" 4)"
       else
         echo "Invalid option: ${1}"
         usage
@@ -124,9 +124,9 @@ function main() {
     if [[ "$(first_char "${1}")" == "-" ]]; then
       if [[ "${1}" == "-t" ]]; then
         if [[ "$(first_char "${2}")" != "-" ]]; then
-          label="${2}"
+          tag="${2}"
         else
-          echo "No label."
+          echo "No tag."
           usage
           return ${E_NO_LABEL}
         fi
@@ -138,20 +138,20 @@ function main() {
     else
       dirpath="${1}"
       if [[ "$(first_char "${2}")" != "-" ]]; then
-        label="${2}"
+        tag="${2}"
       fi
     fi
   fi
 
   if [[ -z "${dirpath}" ]]; then
-    if [[ "${label}" == "." || "${label}" == ".." ]]; then
+    if [[ "${tag}" == "." || "${tag}" == ".." ]]; then
       return 0
     fi
 
-    local destdir="$(find_destdir "${savepath}" "${label}")"
+    local destdir="$(find_destdir "${savepath}" "${tag}")"
     if [[ -z "${destdir}" ]]; then
-      if [[ ! -z "${label}" ]]; then
-        echo "** No such label: ${label}"
+      if [[ ! -z "${tag}" ]]; then
+        echo "** No such tag: ${tag}"
         return ${E_NO_SUCH_LABEL}
       fi
       return 0
@@ -184,10 +184,10 @@ function main() {
     fi
 
     cd "${dirpath}"
-    if [[ "${label}" == "." ]]; then
-      label="$(basename $(pwd))"
+    if [[ "${tag}" == "." ]]; then
+      tag="$(basename $(pwd))"
     fi
-    save "${savepath}" "$(pwd)" "${label}"
+    save "${savepath}" "$(pwd)" "${tag}"
   fi
 
   return 0
