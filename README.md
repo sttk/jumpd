@@ -1,13 +1,13 @@
 # [jumpd][repo-url] ![Version][ver-img] [![MIT License][mit-img]][mit-url]
 
-Jumps to the the last jumped directory or the labeled directory.
+Jumps to the the last jumped directory or the tagged directory.
 If the destination direcotry does not exist, makes it.
 
 ## Install
 
 1. Download `jumpd` file from [github.com][repo-url] and put it in your favorite directory. (ex. `~/tools`)
 
-2. Write an alias   in `.bashrc`
+2. Write an alias in `.bashrc` or `.zshrc`.
 
     ```sh
     alias jd='. $HOME/tools/jumpd'
@@ -16,8 +16,8 @@ If the destination direcotry does not exist, makes it.
 ## CLI
 
 ```sh
-. jumpd dirpath [ label | . ]
-. jumpd [ -t label | -t=label ]
+. jumpd dirpath [ tag | . ]
+. jumpd [ -t tag | -t=tag ]
 . jumpd -h
 ```
 
@@ -31,7 +31,7 @@ If the destination direcotry does not exist, makes it.
    /path/to/dest/dir
    $ cat ~/.jumpd
    /path/to/dest/dir
-   ``` 
+   ```
 
 1. This tool jumps back to the last saved path with no argument.
 
@@ -44,7 +44,7 @@ If the destination direcotry does not exist, makes it.
     /path/to/dest/dir
     ```
 
-1. This tool can save directory with label.
+1. This tool can save directory with tag.
 
     ```sh
     $ jd ../another/dir another
@@ -62,7 +62,7 @@ If the destination direcotry does not exist, makes it.
     another /path/to/another/dir
     ```
 
-1. This tool jumps back to the saved path by label with `-t` option.    
+1. This tool jumps back to the saved path by tag with `-t` option.
 
     ```sh
     $ jd -t another
@@ -72,7 +72,7 @@ If the destination direcotry does not exist, makes it.
     /path/to/another/dir
     another /path/to/another/dir
     dest /path/to/dest/dir
-    ```    
+    ```
 
 1. If the specified path is not a directory but a file, this tool jumps to the parent directory.
 
@@ -112,7 +112,7 @@ If the destination direcotry does not exist, makes it.
 
 ## License
 
-Copyright (C) 2017-2019 Takayuki Sato
+Copyright (C) 2017-2020 Takayuki Sato
 
 This program is free software under [MIT][mit-url] License.
 See the file LICENSE in this distribution for more details.
